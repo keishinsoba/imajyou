@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>啓新高校そば部｜今庄そば祭り 応援メッセージ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800&family=Shippori+Mincho:wght@400;700;800&display=swap" rel="stylesheet">
+<!-- Firebase Realtime Database (compat版・他の教室管理アプリと同じ書き方) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  :root {
+    --brown: #5C3D2E;
+    --brown-dark: #3E2518;
+    --cream: #F5EDE0;
+    --warm: #D4A76A;
+    --warm-light: #E8CFA3;
+    --green: #6B8E50;
+    --green-light: #EAF2E4;
+    --light: #FAF7F2;
+    --red: #C0392B;
+    --shadow: rgba(92,61,46,0.08);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    min-height: 100vh;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--brown);
+    background: var(--light);
+    background-image:
+      radial-gradient(ellipse at 20% 0%, var(--cream) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, #f0e6d6 0%, transparent 50%);
+  }
+
+  .header {
+    background: linear-gradient(135deg, var(--brown) 0%, #7B5340 60%, var(--brown-dark) 100%);
+    padding: 30px 16px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(45deg, transparent, transparent 18px, rgba(255,255,255,0.04) 18px, rgba(255,255,255,0.04) 19px),
+      repeating-linear-gradient(-45deg, transparent, transparent 18px, rgba(255,255,255,0.03) 18px, rgba(255,255,255,0.03) 19px);
+    pointer-events: none;
+  }
+  .header-icon { font-size: 2.2rem; margin-bottom: 4px; position: relative; z-index: 1; }
+  .header h1 {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--cream);
+    letter-spacing: 0.1em;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+  .header-sub {
+    font-size: 0.78rem;
+    color: var(--warm);
+    margin-top: 6px;
+    letter-spacing: 0.08em;
+    position: relative;
+    z-index: 1;
+    line-height: 1.6;
+  }
+  .club-badge {
+    display: inline-block;
+    margin-bottom: 8px;
+    padding: 5px 12px;
+    border: 1px solid rgba(245,237,224,0.45);
+    border-radius: 999px;
+    color: var(--cream);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    padding: 14px 10px;
+    background: #fff;
+    border-bottom: 1px solid rgba(212,167,106,0.15);
+  }
+  .stat-box { text-align: center; flex: 1; max-width: 120px; }
+  .stat-num {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--brown);
+  }
+  .stat-label { font-size: 0.68rem; color: #999; margin-top: 2px; }
+
+  .role-nav {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #fff;
+    border-bottom: 2px solid rgba(212,167,106,0.18);
+  }
+  .role-nav button {
+    flex: 1;
+    padding: 14px 8px;
+    border: none;
+    background: #fff;
+    color: #999;
+    font-size: 0.9rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.25s;
+    letter-spacing: 0.03em;
+  }
+  .role-nav button.active {
+    background: var(--cream);
+    color: var(--brown);
+    border-bottom-color: var(--warm);
+  }
+  .role-nav button:hover:not(.active) { background: #faf8f4; }
+
+  .content {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+  }
+  .screen { display: none; animation: fadeUp 0.35s ease; }
+  .screen.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 14px var(--shadow);
+    border: 1px solid rgba(212,167,106,0.12);
+  }
+  .customer-card { border-left: 4px solid var(--warm); }
+  .staff-card { border-left: 4px solid var(--green); }
+  .section-title {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.08rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+  .section-lead {
+    font-size: 0.84rem;
+    color: #8f7b6b;
+    line-height: 1.8;
+  }
+  .divider-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 22px 0 12px;
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+  .divider-title::after {
+    content: '';
+    height: 1px;
+    background: rgba(212,167,106,0.35);
+    flex: 1;
+  }
+
+  .q-label {
+    font-size: 0.92rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    line-height: 1.5;
+    font-family: 'Shippori Mincho', serif;
+  }
+  .q-hint {
+    font-size: 0.8rem;
+    color: #999;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .option-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 11px 14px;
+    margin-bottom: 7px;
+    border: 1.5px solid rgba(212,167,106,0.3);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--brown);
+    font-size: 0.86rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .option-btn:hover { background: #fdf9f3; border-color: var(--warm); }
+  .option-btn.selected {
+    border: 2px solid var(--warm);
+    background: rgba(212,167,106,0.1);
+    font-weight: 700;
+  }
+
+  .btn-primary {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--brown), #7B5340);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    box-shadow: 0 4px 16px rgba(92,61,46,0.25);
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(92,61,46,0.3); }
+  .btn-primary:disabled {
+    background: #ccc;
+    box-shadow: none;
+    cursor: default;
+    transform: none;
+  }
+  .btn-small {
+    width: auto;
+    padding: 10px 24px;
+    font-size: 0.86rem;
+  }
+  .btn-secondary {
+    border: 1.5px solid rgba(92,61,46,0.25);
+    background: #fff;
+    color: var(--brown);
+    box-shadow: none;
+  }
+
+  .input-field {
+    width: 100%;
+    border: 1.5px solid rgba(212,167,106,0.3);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.88rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--brown);
+    outline: none;
+    transition: border-color 0.2s;
+    background: #fff;
+  }
+  .input-field:focus { border-color: var(--warm); }
+  textarea.input-field { min-height: 92px; resize: vertical; }
+  .post-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    gap: 12px;
+  }
+  .char-count { font-size: 0.7rem; color: #aaa; white-space: nowrap; }
+
+
+  .timeline-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0 12px;
+  }
+  .timeline-head-title {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.02rem;
+    font-weight: 800;
+  }
+  .timeline-head-note {
+    font-size: 0.72rem;
+    color: #999;
+    white-space: nowrap;
+  }
+  .timeline {
+    position: relative;
+    margin: 0 0 20px;
+    padding-left: 18px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    bottom: 8px;
+    width: 2px;
+    background: linear-gradient(var(--warm-light), rgba(212,167,106,0.15));
+    border-radius: 2px;
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .timeline-item::before {
+    content: '🍜';
+    position: absolute;
+    left: -21px;
+    top: 14px;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid rgba(212,167,106,0.4);
+    display: grid;
+    place-items: center;
+    font-size: 0.72rem;
+    box-shadow: 0 1px 6px var(--shadow);
+  }
+  .timeline-card {
+    border-left: 4px solid var(--warm);
+  }
+  .timeline-new {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--green-light);
+    color: var(--green);
+    font-size: 0.64rem;
+    font-weight: 800;
+    vertical-align: middle;
+  }
+
+  .msg-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 8px var(--shadow);
+    border: 1px solid rgba(212,167,106,0.1);
+    animation: fadeUp 0.3s ease;
+  }
+  .msg-name {
+    font-size: 0.76rem;
+    color: var(--green);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .msg-text {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg-time {
+    font-size: 0.68rem;
+    color: #aaa;
+    margin-top: 8px;
+  }
+  .emoji-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .emoji-btn {
+    background: transparent;
+    border: 1.5px solid transparent;
+    border-radius: 20px;
+    padding: 3px 7px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .emoji-btn:hover { background: rgba(212,167,106,0.12); }
+  .emoji-btn.has-count {
+    background: rgba(212,167,106,0.12);
+    border-color: var(--warm);
+  }
+  .emoji-count {
+    font-size: 0.68rem;
+    margin-left: 2px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--brown);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 30px 0;
+    color: #999;
+    font-size: 0.88rem;
+    line-height: 1.8;
+  }
+  .done-icon { font-size: 2.8rem; margin-bottom: 10px; }
+
+  .result-count {
+    text-align: center;
+    margin-bottom: 16px;
+    font-size: 0.82rem;
+    color: #999;
+  }
+  .result-count strong { color: var(--brown); }
+  .bar-wrapper { margin-bottom: 7px; }
+  .bar-bg {
+    min-height: 28px;
+    border-radius: 14px;
+    background: var(--cream);
+    border: 1px solid rgba(212,167,106,0.2);
+    position: relative;
+    overflow: hidden;
+  }
+  .bar-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, var(--warm), var(--warm-light));
+    border-radius: 14px;
+    transition: width 0.6s ease;
+  }
+  .bar-label {
+    position: relative;
+    z-index: 1;
+    display: block;
+    padding: 6px 86px 6px 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--brown);
+    line-height: 1.4;
+  }
+  .bar-pct {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--brown);
+    z-index: 1;
+  }
+
+  .staff-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .staff-metric {
+    border-radius: 12px;
+    background: var(--green-light);
+    padding: 12px 8px;
+    text-align: center;
+  }
+  .staff-metric strong {
+    display: block;
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.35rem;
+    color: var(--green);
+  }
+  .staff-metric span {
+    font-size: 0.68rem;
+    color: #777;
+  }
+  .staff-note {
+    background: #fffaf2;
+    border: 1px dashed rgba(212,167,106,0.55);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.78rem;
+    color: #8a6b4e;
+    line-height: 1.7;
+    margin-top: 12px;
+  }
+  .message-tools {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 10px 0 14px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(30px);
+    background: var(--brown);
+    color: #fff;
+    padding: 12px 26px;
+    border-radius: 30px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    box-shadow: 0 4px 22px rgba(0,0,0,0.22);
+    opacity: 0;
+    transition: all 0.35s ease;
+    z-index: 999;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .deco-noodle {
+    position: fixed;
+    bottom: -8px;
+    right: -8px;
+    font-size: 4rem;
+    opacity: 0.06;
+    pointer-events: none;
+    transform: rotate(-15deg);
+  }
+
+  @media (max-width: 460px) {
+    .header h1 { font-size: 1.35rem; }
+    .stats-bar { gap: 6px; }
+    .role-nav button { font-size: 0.84rem; }
+    .staff-grid { grid-template-columns: 1fr; }
+    .post-footer { align-items: stretch; flex-direction: column; }
+    .post-footer .btn-primary { width: 100%; }
+    .timeline-head { align-items: flex-start; flex-direction: column; gap: 2px; }
+    .timeline-head-note { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="club-badge">啓新高校そば部 出店企画</div>
+  <div class="header-icon">🍜</div>
+  <h1>啓新高校そば部 応援メッセージ</h1>
+  <div class="header-sub">食べていない方も、応援メッセージを送れます</div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-box">
+    <div class="stat-num" id="statSurvey">0</div>
+    <div class="stat-label">食べた方の声</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num" id="statMsg">0</div>
+    <div class="stat-label">応援メッセージ</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num" id="statReact">0</div>
+    <div class="stat-label">リアクション</div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="screen active" id="screen-customer"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="deco-noodle">🍜</div>
+
+<script>
+// ===== Firebase 設定 =====
+// ↓↓↓ 普段使っている教室管理アプリのfirebaseConfigを、このオブジェクトに置き換えてください ↓↓↓
+const firebaseConfig = {
+  apiKey: "AIzaSyDf3t53cUMrcKSDiuOgj4Ffa6RqmmcdDn4",
+  authDomain: "teacher-manager-d4623.firebaseapp.com",
+  databaseURL: "https://teacher-manager-d4623-default-rtdb.firebaseio.com",
+  projectId: "teacher-manager-d4623",
+  storageBucket: "teacher-manager-d4623.firebasestorage.app",
+  messagingSenderId: "388614519592",
+  appId: "1:388614519592:web:7e2c60e6ac937c9212ee1d"
+};
+// ↑↑↑ ここまで置き換える ↑↑↑
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+// このアプリのデータが入る親ノード（他のアプリと混ざらないように分離）
+const ROOT = 'keishin-soba';
+const refMessages  = db.ref(ROOT + '/messages');
+const refSurveys   = db.ref(ROOT + '/surveys');
+const refReactions = db.ref(ROOT + '/reactions');
+
+const QUESTIONS = [
+  { id:'visit', q:'啓新高校そば部の出店を知っていましたか？', options:['知っていて来ました','会場で知りました','今、初めて知りました'] },
+  { id:'taste', q:'啓新高校そば部のそばの満足度は？', options:['★★★★★ とても満足','★★★★ 満足','★★★ ふつう','★★ もう少し','★ 改善してほしい'] },
+  { id:'service', q:'そば部員の接客・雰囲気はいかがでしたか？', options:['とても良かった','良かった','ふつう','もう少し元気がほしい','改善してほしい'] },
+  { id:'wait', q:'待ち時間や受け取りまでの流れはどうでしたか？', options:['スムーズだった','少し待ったが問題ない','長く感じた','案内がもっとあると良い'] },
+  { id:'again', q:'また啓新高校そば部のそばを食べたいですか？', options:['ぜひ食べたい','機会があれば食べたい','どちらともいえない','改善されたら食べたい'] },
+];
+const EMOJIS = ['🍜','❤️','👏','🎉','💪'];
+
+let answers = {};
+let submitted = false;
+let messages = [];
+let surveyResults = [];
+let reactions = {};
+
+// 自分の端末で送信済みかどうかだけは localStorage に保持（リロード対策）
+function getLocalSubmitted() {
+  try { return localStorage.getItem('keishin-soba-submitted') === '1'; } catch(e) { return false; }
+}
+function setLocalSubmitted(v) {
+  try { localStorage.setItem('keishin-soba-submitted', v ? '1' : '0'); } catch(e) {}
+}
+
+// Firebase からリアルタイムで購読開始
+function startRealtimeSync() {
+  // メッセージ：新しい順に並べる
+  refMessages.on('value', snap => {
+    const v = snap.val() || {};
+    messages = Object.values(v).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    renderAll();
+  }, err => console.error('messages sync error:', err));
+
+  // アンケート：件数集計用にそのまま配列化
+  refSurveys.on('value', snap => {
+    const v = snap.val() || {};
+    surveyResults = Object.values(v);
+    renderAll();
+  }, err => console.error('surveys sync error:', err));
+
+  // リアクション：{ msgId_emoji: count } の形でそのまま反映
+  refReactions.on('value', snap => {
+    reactions = snap.val() || {};
+    renderAll();
+  }, err => console.error('reactions sync error:', err));
+}
+
+async function loadData() {
+  submitted = getLocalSubmitted();
+  startRealtimeSync();
+  renderAll();
+}
+
+function renderAll() {
+  updateStats();
+  renderCustomer();
+}
+
+function formatTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function updateStats() {
+  document.getElementById('statSurvey').textContent = surveyResults.length;
+  document.getElementById('statMsg').textContent = messages.length;
+  document.getElementById('statReact').textContent = Object.values(reactions).reduce((a,b) => a+b, 0);
+}
+
+document.querySelectorAll('.role-nav button').forEach(btn => {
+  btn.addEventListener('click', () => switchScreen(btn.dataset.screen));
+});
+
+function switchScreen(screen) {
+  document.querySelectorAll('.role-nav button').forEach(b => {
+    b.classList.toggle('active', b.dataset.screen === screen);
+  });
+  document.querySelectorAll('.screen').forEach(p => p.classList.remove('active'));
+  document.getElementById('screen-' + screen).classList.add('active');
+}
+
+function renderCustomer() {
+  const page = document.getElementById('screen-customer');
+  let html = `
+    <div class="card customer-card">
+      <div class="section-title">👥 お客様へ</div>
+      <div class="section-lead">
+        本日は啓新高校そば部の出店にお立ち寄りいただき、ありがとうございます。<br>
+        いただいた声は、そば部員の技術向上と次回の販売改善に生かします。
+      </div>
+    </div>
+    <div class="divider-title">💬 応援メッセージ</div>
+    ${renderMessagePostBlock()}
+    <div class="timeline-head">
+      <div class="timeline-head-title">みんなの応援メッセージ</div>
+      <div class="timeline-head-note">新しい順に表示</div>
+    </div>
+    ${renderMessageList(true)}
+    <div class="divider-title">📋 食べた方へのアンケート</div>
+    ${renderSurveyBlock()}
+  `;
+  page.innerHTML = html;
+}
+
+function renderSurveyBlock() {
+  if (submitted) {
+    return `
+      <div class="card" style="text-align:center;padding:34px 18px;">
+        <div class="done-icon">🎉</div>
+        <div style="font-size:1.1rem;font-weight:700;margin-bottom:8px;font-family:'Shippori Mincho',serif;">ご回答ありがとうございます！</div>
+        <div style="font-size:0.84rem;color:#8f7b6b;line-height:1.7;">
+          啓新高校そば部の今後の活動に生かします。<br>
+          応援メッセージは、食べていない方からも受け付けています。
+        </div>
+      </div>`;
+  }
+
+  let html = `<div class="q-hint">啓新高校そば部のそばを食べた方へ・全${QUESTIONS.length}問・1分程度</div>`;
+  QUESTIONS.forEach((q, qi) => {
+    html += `<div class="card"><div class="q-label">Q${qi+1}. ${q.q}</div>`;
+    q.options.forEach(opt => {
+      const sel = answers[q.id] === opt;
+      html += `<button class="option-btn${sel?' selected':''}" onclick="selectAnswer('${q.id}','${opt.replace(/'/g,"\\'")}')">
+        ${sel ? '● ' : '○ '}${opt}</button>`;
+    });
+    html += `</div>`;
+  });
+
+  const allAnswered = Object.keys(answers).length >= QUESTIONS.length;
+  html += `<button class="btn-primary" ${allAnswered?'':'disabled'} onclick="submitSurvey()">啓新高校そば部へ声を届ける 🍜</button>`;
+  return html;
+}
+
+window.selectAnswer = function(qId, opt) {
+  if (submitted) return;
+  answers[qId] = opt;
+  renderCustomer();
+};
+
+window.submitSurvey = async function() {
+  if (Object.keys(answers).length < QUESTIONS.length) return;
+  try {
+    await refSurveys.push({ answers: {...answers}, ts: Date.now() });
+    submitted = true;
+    setLocalSubmitted(true);
+    renderAll();
+    showToast('🍜 ご回答ありがとうございます！');
+  } catch(e) {
+    console.error(e);
+    showToast('送信できませんでした。電波の良いところで再度お試しください');
+  }
+};
+
+function renderMessagePostBlock() {
+  return `
+    <div class="card customer-card">
+      <div class="q-label">✍️ 啓新高校そば部へ応援メッセージを書く</div>
+      <div class="section-lead" style="margin-bottom:12px;">そばを食べていない方も投稿できます。行列で見かけた感想、そば部員への応援、今後への期待など、ひとことでも大歓迎です。</div>
+      <input class="input-field" id="inputName" type="text" placeholder="お名前（任意）" maxlength="20" style="margin-bottom:10px;">
+      <textarea class="input-field" id="inputMsg" placeholder="例：高校生が頑張っていて元気をもらいました／今回は食べられなかったけど応援しています／次回楽しみにしています／おいしかったです！ など" maxlength="300" oninput="updateCharCount()"></textarea>
+      <div class="post-footer">
+        <span class="char-count" id="charCount">0/300</span>
+        <button class="btn-primary btn-small" onclick="postMessage()">投稿する</button>
+      </div>
+    </div>`;
+}
+
+function renderMessageList(withReactionButtons) {
+  if (messages.length === 0) {
+    return `<div class="empty-state">まだメッセージはありません。<br>そばを食べた方も、食べていない方も、最初の一言を投稿してみましょう！</div>`;
+  }
+  let html = withReactionButtons ? '<div class="timeline">' : '';
+  messages.forEach((m, index) => {
+    const itemStart = withReactionButtons ? '<div class="timeline-item">' : '';
+    const itemEnd = withReactionButtons ? '</div>' : '';
+    const cardClass = withReactionButtons ? 'msg-card timeline-card' : 'msg-card';
+    html += `${itemStart}<div class="${cardClass}">
+      <div class="msg-name">${escHtml(m.name)}${index === 0 && withReactionButtons ? '<span class="timeline-new">最新</span>' : ''}</div>
+      <div class="msg-text">${escHtml(m.text)}</div>`;
+    if (withReactionButtons) {
+      html += `<div class="emoji-row">`;
+      EMOJIS.forEach(emoji => {
+        const key = m.id + '_' + emoji;
+        const cnt = reactions[key] || 0;
+        html += `<button class="emoji-btn${cnt>0?' has-count':''}" onclick="react('${m.id}','${emoji}')">${emoji}${cnt>0?'<span class="emoji-count">'+cnt+'</span>':''}</button>`;
+      });
+      html += `</div>`;
+    } else {
+      const reactionTotal = EMOJIS.reduce((sum, emoji) => sum + (reactions[m.id + '_' + emoji] || 0), 0);
+      html += `<div class="msg-time">リアクション ${reactionTotal}件</div>`;
+    }
+    html += `<div class="msg-time">${formatTime(m.ts)}</div></div>${itemEnd}`;
+  });
+  if (withReactionButtons) html += '</div>';
+  return html;
+}
+
+window.updateCharCount = function() {
+  const el = document.getElementById('inputMsg');
+  const counter = document.getElementById('charCount');
+  if (counter) counter.textContent = (el ? el.value.length : 0) + '/300';
+};
+
+window.postMessage = async function() {
+  const nameEl = document.getElementById('inputName');
+  const msgEl = document.getElementById('inputMsg');
+  const text = (msgEl?.value || '').trim();
+  if (!text) return;
+  const msg = {
+    name: (nameEl?.value || '').trim() || '匿名のお客様',
+    text: text,
+    ts: Date.now(),
+  };
+  try {
+    // FirebaseのpushでユニークIDを採番してもらう。idも一緒に保存（削除処理で使う）
+    const newRef = refMessages.push();
+    msg.id = newRef.key;
+    await newRef.set(msg);
+    if (msgEl) msgEl.value = '';
+    if (nameEl) nameEl.value = '';
+    updateCharCount();
+    showToast('📝 啓新高校そば部にメッセージを届けました！');
+  } catch(e) {
+    console.error(e);
+    showToast('送信できませんでした。電波の良いところで再度お試しください');
+  }
+};
+
+window.react = async function(msgId, emoji) {
+  const key = msgId + '_' + emoji;
+  try {
+    // transactionで原子的にインクリメント（複数のお客様が同時に押しても数が消えない）
+    await refReactions.child(key).transaction(cur => (cur || 0) + 1);
+  } catch(e) {
+    console.error(e);
+  }
+};
+
+
+loadData();
+</script>
+</body>
+</html>
