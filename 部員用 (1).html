@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>啓新そば部 - 部員用</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Klee+One:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sumi: #1a1614;
+    --washi: #f5efe4;
+    --washi-dark: #e8dfce;
+    --beni: #b73c2f;
+    --beni-dark: #8a2920;
+    --cha: #6b4423;
+    --moegi: #5d6e3d;
+    --moegi-dark: #4a5a30;
+    --kin: #b8893a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Shippori Mincho', serif;
+    background: var(--washi);
+    color: var(--sumi);
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(184,137,58,0.08) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(183,60,47,0.06) 0%, transparent 40%);
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.06 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.6;
+    z-index: 1;
+  }
+  .container {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+  }
+
+  /* ====== 部員ヘッダー ====== */
+  .staff-header {
+    text-align: center;
+    padding: 12px 0 16px;
+    border-bottom: 2px solid var(--sumi);
+    margin-bottom: 16px;
+  }
+  .staff-title { font-size: 18px; font-weight: 800; letter-spacing: 0.15em; }
+  .staff-role { font-size: 11px; letter-spacing: 0.4em; color: var(--cha); margin-top: 4px; }
+  .label { font-size: 11px; letter-spacing: 0.4em; color: var(--cha); text-align: center; margin-bottom: 8px; }
+
+  /* ====== 大ボタン ====== */
+  .big-btn-area { text-align: center; margin-bottom: 20px; }
+  .current-num-display {
+    font-family: 'Klee One', serif;
+    font-size: 72px;
+    color: var(--sumi);
+    line-height: 1;
+    margin: 12px 0;
+    text-shadow: 2px 2px 0 var(--washi-dark);
+    transition: transform 0.15s;
+  }
+  .current-num-display.beni { color: var(--beni); }
+  .current-num-display.moegi { color: var(--moegi); }
+  .current-num-display.bump { transform: scale(1.15); }
+
+  button {
+    border: 2px solid var(--sumi);
+    background: var(--sumi);
+    color: var(--washi);
+    font-family: 'Shippori Mincho', serif;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  button:hover { background: var(--beni); }
+  button:active { transform: translate(2px, 2px); }
+  button:disabled { opacity: 0.4; pointer-events: none; }
+
+  .btn-huge {
+    width: 100%; padding: 28px; font-size: 22px;
+    margin-bottom: 10px; position: relative; overflow: hidden;
+  }
+  .btn-huge.moegi { background: var(--moegi); border-color: var(--moegi-dark); }
+  .btn-huge.moegi:hover { background: var(--moegi-dark); }
+  .btn-huge.beni { background: var(--beni); border-color: var(--beni-dark); }
+  .btn-huge.beni:hover { background: var(--beni-dark); }
+
+  .btn-huge .cooldown-bar {
+    position: absolute; bottom: 0; left: 0;
+    height: 4px; background: rgba(255,255,255,0.5);
+    width: 0; transition: width linear;
+  }
+
+  .btn-row { display: flex; gap: 6px; margin-top: 8px; }
+  .btn-row button { flex: 1; }
+
+  .btn-secondary { background: #fff; color: var(--sumi); padding: 14px; font-size: 13px; }
+  .btn-secondary:hover { background: var(--washi); color: var(--sumi); }
+
+  /* ====== 元に戻すトースト ====== */
+  .undo-toast {
+    position: fixed; bottom: 46px; left: 50%; transform: translateX(-50%);
+    background: var(--sumi); color: var(--washi);
+    padding: 10px 20px; font-family: 'Shippori Mincho', serif;
+    font-size: 13px; letter-spacing: 0.1em; z-index: 200;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    opacity: 0; pointer-events: none; transition: opacity 0.25s; white-space: nowrap;
+  }
+  .undo-toast.show { opacity: 1; pointer-events: auto; }
+  .undo-toast button {
+    background: var(--beni); border: none; color: #fff;
+    padding: 6px 14px; font-size: 12px;
+    font-family: 'Shippori Mincho', serif; cursor: pointer; letter-spacing: 0.1em;
+  }
+
+  /* ====== 統計 ====== */
+  .staff-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .staff-stat { background: #fff; border: 1px solid var(--sumi); padding: 12px 4px; text-align: center; }
+  .staff-stat .s-label { font-size: 9px; letter-spacing: 0.15em; color: var(--cha); margin-bottom: 4px; }
+  .staff-stat .s-value { font-family: 'Klee One', serif; font-size: 24px; line-height: 1; }
+
+  /* ====== セクション ====== */
+  .section { background: #fff; border: 1px solid var(--sumi); padding: 14px; margin-bottom: 12px; }
+  .section-label { font-size: 11px; letter-spacing: 0.2em; color: var(--cha); margin-bottom: 8px; font-weight: 600; }
+
+  .setting-row { display: flex; align-items: center; gap: 10px; }
+  .setting-row input {
+    width: 70px; padding: 8px;
+    border: 2px solid var(--sumi); background: var(--washi);
+    font-family: 'Klee One', serif; font-size: 16px; text-align: center;
+  }
+  .setting-row span { font-size: 13px; flex: 1; }
+
+  .food-input-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .food-input-row input {
+    width: 80px; padding: 10px;
+    border: 2px solid var(--sumi); background: var(--washi);
+    font-family: 'Klee One', serif; font-size: 20px; text-align: center;
+  }
+  .food-input-row span { font-size: 14px; }
+
+  .status-toggle { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  .status-btn { padding: 12px 4px; background: #fff; color: var(--sumi); font-size: 11px; }
+  .status-btn.active { background: var(--sumi); color: var(--washi); }
+
+  /* ====== QR ====== */
+  .qr-section { background: #fff; border: 1px solid var(--sumi); padding: 14px; text-align: center; margin-bottom: 12px; }
+  .qr-section canvas, .qr-section img { margin: 8px auto; display: block; }
+  .url-display {
+    font-family: monospace; font-size: 10px;
+    background: var(--washi); padding: 6px;
+    word-break: break-all; border: 1px solid var(--washi-dark); margin-top: 4px;
+  }
+
+  /* ====== ログ ====== */
+  .log-panel { background: #fff; border: 1px solid var(--sumi); padding: 14px; margin-bottom: 12px; max-height: 200px; overflow-y: auto; }
+  .log-panel .log-entry {
+    font-size: 11px; color: var(--cha);
+    padding: 3px 0; border-bottom: 1px solid var(--washi-dark);
+    display: flex; justify-content: space-between;
+  }
+  .log-panel .log-entry:last-child { border-bottom: none; }
+  .log-entry .log-time { color: var(--sumi); font-family: 'Klee One', serif; }
+
+  /* ====== モード切替タブ ====== */
+  .mode-tabs {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 0; margin-bottom: 20px;
+    border: 2px solid var(--sumi);
+  }
+  .mode-tab {
+    padding: 14px 4px; text-align: center;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.15em;
+    background: #fff; color: var(--cha);
+    cursor: pointer; border: none;
+    border-right: 1px solid var(--washi-dark);
+    font-family: 'Shippori Mincho', serif;
+    transition: all 0.15s;
+  }
+  .mode-tab:last-child { border-right: none; }
+  .mode-tab:hover { background: var(--washi); }
+  .mode-tab:active { transform: none; }
+  .mode-tab.active {
+    background: var(--sumi); color: var(--washi);
+  }
+  .mode-tab.active:hover { background: var(--sumi); }
+
+  /* ====== 接続バー ====== */
+  .conn-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--sumi); color: var(--washi);
+    padding: 6px 16px; font-size: 10px; text-align: center;
+    letter-spacing: 0.2em; z-index: 100; transition: background 0.3s;
+  }
+  .conn-bar.offline { background: var(--beni); }
+  .conn-bar.reconnecting { background: var(--kin); color: var(--sumi); }
+  .conn-bar .dot {
+    display: inline-block; width: 6px; height: 6px;
+    background: var(--moegi); border-radius: 50%;
+    margin-right: 6px; animation: blink 2s ease-in-out infinite;
+  }
+  .conn-bar.offline .dot { background: var(--washi); animation: none; }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .hidden { display: none !important; }
+
+  @media (max-width: 480px) {
+    .current-num-display { font-size: 60px; }
+    .btn-huge { padding: 22px; font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- モード切替タブ -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="entry" onclick="switchMode('entry')">🚪 入口（外）</button>
+    <button class="mode-tab" data-mode="counter" onclick="switchMode('counter')">🍜 受付（中）</button>
+    <button class="mode-tab" data-mode="master" onclick="switchMode('master')">⚙ 管理</button>
+  </div>
+
+  <!-- ================== 入口（外：整理券配布 +1） ================== -->
+  <div id="entryView" class="view-panel">
+    <div class="staff-header">
+      <div class="staff-role">入 口 担 当（外）</div>
+      <div class="staff-title">整理券<span style="color:var(--moegi);">配布</span></div>
+    </div>
+
+    <div class="big-btn-area">
+      <div class="label">最新の配布番号</div>
+      <div class="current-num-display moegi" id="e_lastHandedNum">0</div>
+      <button class="btn-huge moegi" id="btnHandNext" onclick="handNext()">
+        次の整理券を渡した（+1）
+        <div class="cooldown-bar" id="cdHandNext"></div>
+      </button>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="adjustHanded(-1)">戻す（-1）</button>
+        <button class="btn-secondary" onclick="adjustHanded(5)">+5</button>
+        <button class="btn-secondary" onclick="adjustHanded(10)">+10</button>
+      </div>
+    </div>
+
+    <div class="staff-stats">
+      <div class="staff-stat">
+        <div class="s-label">配布済</div>
+        <div class="s-value" style="color:var(--moegi);" id="e_handed">0</div>
+      </div>
+      <div class="staff-stat">
+        <div class="s-label">提供済</div>
+        <div class="s-value" style="color:var(--beni);" id="e_serving">0</div>
+      </div>
+      <div class="staff-stat">
+        <div class="s-label">待ち組数</div>
+        <div class="s-value" id="e_waiting">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================== 受付（中：そば提供 +1） ================== -->
+  <div id="counterView" class="view-panel hidden">
+    <div class="staff-header">
+      <div class="staff-role">受 付 ・ 提 供（中）</div>
+      <div class="staff-title">提供<span style="color:var(--beni);">進行</span></div>
+    </div>
+
+    <div class="big-btn-area">
+      <div class="label">現在の提供番号</div>
+      <div class="current-num-display beni" id="r_servingNum">0</div>
+      <button class="btn-huge beni" id="btnServeNext" onclick="serveNext()">
+        次のお客様に提供（+1）
+        <div class="cooldown-bar" id="cdServeNext"></div>
+      </button>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="adjustServing(-1)">戻す（-1）</button>
+        <button class="btn-secondary" onclick="adjustServing(5)">+5</button>
+        <button class="btn-secondary" onclick="adjustServing(10)">+10</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">▼ 1組あたりの食数（残り食数計算用）</div>
+      <div class="food-input-row">
+        <input type="number" id="r_avgFoodInput" min="1" max="10" value="3">
+        <span>食／組</span>
+        <button class="btn-secondary" onclick="updateAvgFood()" style="padding:10px 16px;">更新</button>
+      </div>
+    </div>
+
+    <div class="staff-stats">
+      <div class="staff-stat">
+        <div class="s-label">配布済</div>
+        <div class="s-value" style="color:var(--moegi);" id="r_handed">0</div>
+      </div>
+      <div class="staff-stat">
+        <div class="s-label">提供済</div>
+        <div class="s-value" style="color:var(--beni);" id="r_served">0</div>
+      </div>
+      <div class="staff-stat">
+        <div class="s-label">残り食数</div>
+        <div class="s-value" style="color:var(--kin);" id="r_remaining">900</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================== 管理 ================== -->
+  <div id="masterView" class="view-panel hidden">
+    <div class="staff-header">
+      <div class="staff-role">管 理 者</div>
+      <div class="staff-title">マスター<span style="color:var(--beni);">管理</span></div>
+    </div>
+
+    <div class="staff-stats">
+      <div class="staff-stat">
+        <div class="s-label">配布済</div>
+        <div class="s-value" style="color:var(--moegi);" id="m_handed">0</div>
+      </div>
+      <div class="staff-stat">
+        <div class="s-label">提供済</div>
+        <div class="s-value" style="color:var(--beni);" id="m_serving">0</div>
+      </div>
+      <div class="staff-stat">
+        <div class="s-label">待ち組</div>
+        <div class="s-value" id="m_waiting">0</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">▼ 1組あたりの提供時間（分）</div>
+      <div class="setting-row">
+        <input type="number" id="m_minutesInput" min="0.1" step="0.1" value="0.33">
+        <span>分／組</span>
+        <button class="btn-secondary" onclick="updateMinutes()" style="padding:8px 12px;">更新</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">▼ 1組あたりの平均食数</div>
+      <div class="setting-row">
+        <input type="number" id="m_avgFoodInput" min="1" max="10" step="0.5" value="3">
+        <span>食／組</span>
+        <button class="btn-secondary" onclick="updateAvgFoodMaster()" style="padding:8px 12px;">更新</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">▼ 営業状態</div>
+      <div class="status-toggle">
+        <button class="status-btn" data-status="closed" onclick="setStatus('closed')">準備中</button>
+        <button class="status-btn" data-status="open" onclick="setStatus('open')">営業中</button>
+        <button class="status-btn" data-status="soldout" onclick="setStatus('soldout')">完売</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">▼ 操作ログ（直近30件）</div>
+      <div class="log-panel" id="logPanel">
+        <div class="log-entry" style="justify-content:center;color:var(--cha);">読み込み中...</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">▼ リセット</div>
+      <button class="btn-secondary" onclick="resetAll()" style="width:100%;">すべてリセット</button>
+    </div>
+
+    <div class="qr-section">
+      <div style="font-size:11px;letter-spacing:0.2em;color:var(--cha);">お客様用ページのQR</div>
+      <div id="qrContainer"></div>
+      <div class="url-display" id="m_url">-</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 元に戻すトースト -->
+<div class="undo-toast" id="undoToast">
+  <span id="undoText">-</span>
+  <button onclick="doUndo()">元に戻す</button>
+</div>
+
+<div class="conn-bar" id="connBar">
+  <span class="dot"></span><span id="statusText">接続中...</span>
+</div>
+
+<!-- QRCode.js（ローカル生成） -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue, set, runTransaction, update, push, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+// ▼▼▼ Firebase設定 ▼▼▼
+const firebaseConfig = {
+  apiKey: "AIzaSyAjCxFe0K7-U8hXYxoojmAHbganXbowaN4",
+  authDomain: "soba-f9d38.firebaseapp.com",
+  databaseURL: "https://soba-f9d38-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "soba-f9d38",
+  storageBucket: "soba-f9d38.firebasestorage.app",
+  messagingSenderId: "181827736596",
+  appId: "1:181827736596:web:d25cf4e06425cd026b8301"
+};
+
+// ▲▲▲
+
+// ===== お客様用ページのファイル名（同じホスティング先にある前提） =====
+const CUSTOMER_PAGE = 'お客様用.html';
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const stateRef = ref(db, 'sobasai_final/state');
+const logRef = ref(db, 'sobasai_final/logs');
+
+const TOTAL = 900;
+const INITIAL = { handed: 0, serving: 0, minutesPerGroup: 0.33, avgFoodPerGroup: 3, status: 'closed' };
+
+let S = { ...INITIAL };
+let undoStack = [];
+let undoTimer = null;
+
+// ===== 接続監視 =====
+onValue(ref(db, '.info/connected'), (snap) => {
+  const bar = document.getElementById('connBar');
+  const txt = document.getElementById('statusText');
+  if (snap.val() === true) {
+    bar.className = 'conn-bar';
+    txt.textContent = '✓ 同期中';
+  } else {
+    bar.className = 'conn-bar offline';
+    txt.textContent = 'オフライン — 再接続待ち';
+  }
+});
+
+// ===== メインデータ監視 =====
+onValue(stateRef, (snap) => {
+  S = { ...INITIAL, ...(snap.val() || {}) };
+
+  // 入力中でなければ値を反映
+  syncInput('m_minutesInput', S.minutesPerGroup);
+  syncInput('m_avgFoodInput', S.avgFoodPerGroup);
+  syncInput('r_avgFoodInput', S.avgFoodPerGroup);
+
+  renderAll();
+}, (err) => {
+  console.error('Firebase error:', err);
+  document.getElementById('connBar').className = 'conn-bar offline';
+  document.getElementById('statusText').textContent = '接続エラー';
+});
+
+function syncInput(id, val) {
+  const el = document.getElementById(id);
+  if (el && document.activeElement !== el) el.value = val;
+}
+
+// ===== ログ監視 =====
+const logQuery = query(logRef, orderByChild('ts'), limitToLast(30));
+onValue(logQuery, (snap) => {
+  const panel = document.getElementById('logPanel');
+  if (!snap.exists()) {
+    panel.innerHTML = '<div class="log-entry" style="justify-content:center;color:var(--cha);">ログなし</div>';
+    return;
+  }
+  const entries = [];
+  snap.forEach(c => entries.push(c.val()));
+  entries.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  panel.innerHTML = entries.map(e => {
+    const d = new Date(e.ts);
+    const t = `${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`;
+    return `<div class="log-entry"><span>${e.action || ''}</span><span class="log-time">${t}</span></div>`;
+  }).join('');
+});
+
+// スリープ復帰
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S) renderAll(); });
+
+// ===== 描画 =====
+function renderAll() {
+  const handed = S.handed || 0;
+  const serving = S.serving || 0;
+  const waitGroups = Math.max(0, handed - serving);
+  const foodServed = serving * (S.avgFoodPerGroup || 3);
+  const remaining = Math.max(0, TOTAL - foodServed);
+
+  // 入口
+  setText('e_lastHandedNum', handed);
+  setText('e_handed', handed);
+  setText('e_serving', serving);
+  setText('e_waiting', waitGroups);
+
+  // 受付
+  setText('r_servingNum', serving);
+  setText('r_handed', handed);
+  setText('r_served', serving);
+  setText('r_remaining', remaining);
+
+  // 管理
+  setText('m_handed', handed);
+  setText('m_serving', serving);
+  setText('m_waiting', waitGroups);
+
+  document.querySelectorAll('.status-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.status === (S.status || 'closed'));
+  });
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+// ===== ユーティリティ =====
+function writeLog(action) {
+  try { push(logRef, { action, ts: Date.now() }); } catch(e) { console.error('Log write failed:', e); }
+}
+
+function vibrate(ms = 50) {
+  try { navigator.vibrate && navigator.vibrate(ms); } catch(e) {}
+}
+
+let audioCtx = null;
+function clickSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = 800; gain.gain.value = 0.15;
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+    osc.stop(audioCtx.currentTime + 0.08);
+  } catch(e) {}
+}
+
+function feedback() { vibrate(); clickSound(); }
+
+function bumpNum(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.classList.add('bump');
+  setTimeout(() => el.classList.remove('bump'), 200);
+}
+
+// ===== 元に戻す =====
+function pushUndo(label, field, prevValue) {
+  undoStack = [{ label, field, prevValue }];
+  document.getElementById('undoText').textContent = label;
+  document.getElementById('undoToast').classList.add('show');
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => {
+    document.getElementById('undoToast').classList.remove('show');
+    undoStack = [];
+  }, 5000);
+}
+
+window.doUndo = async function() {
+  if (undoStack.length === 0) return;
+  const { field, prevValue } = undoStack[0];
+  try {
+    await update(stateRef, { [field]: prevValue });
+    writeLog(`取消: ${field} → ${prevValue}`);
+  } catch(e) { alert('取り消しに失敗しました'); }
+  undoStack = [];
+  document.getElementById('undoToast').classList.remove('show');
+  clearTimeout(undoTimer);
+};
+
+// ===== 入口操作（外：整理券 +1） =====
+window.handNext = async () => {
+  const prev = S.handed || 0;
+  try {
+    await runTransaction(stateRef, d => {
+      if (!d) d = { ...INITIAL };
+      d.handed = (d.handed || 0) + 1;
+      return d;
+    });
+    feedback();
+    bumpNum('e_lastHandedNum');
+    writeLog(`配布: ${prev} → ${prev + 1}`);
+    pushUndo(`配布 ${prev + 1} を取消`, 'handed', prev);
+  } catch(e) {
+    console.error('Operation failed:', e);
+    alert('操作に失敗しました。接続を確認してください。');
+  }
+};
+
+window.adjustHanded = async (delta) => {
+  const prev = S.handed || 0;
+  try {
+    await runTransaction(stateRef, d => {
+      if (!d) d = { ...INITIAL };
+      d.handed = Math.max(0, (d.handed || 0) + delta);
+      return d;
+    });
+    feedback();
+    writeLog(`配布調整: ${prev} → ${prev + delta}`);
+    pushUndo(`配布調整を取消`, 'handed', prev);
+  } catch(e) { alert('操作に失敗しました'); }
+};
+
+// ===== 受付操作（中：そば提供 +1） =====
+window.serveNext = async () => {
+  const prev = S.serving || 0;
+  const handed = S.handed || 0;
+  if (prev >= handed) {
+    alert('配布済の番号を超えています。入口で整理券を配布してください。');
+    return;
+  }
+  try {
+    await runTransaction(stateRef, d => {
+      if (!d) d = { ...INITIAL };
+      if ((d.serving || 0) >= (d.handed || 0)) return d;
+      d.serving = (d.serving || 0) + 1;
+      return d;
+    });
+    feedback();
+    bumpNum('r_servingNum');
+    writeLog(`提供: ${prev} → ${prev + 1}`);
+    pushUndo(`提供 ${prev + 1} を取消`, 'serving', prev);
+  } catch(e) {
+    console.error('Operation failed:', e);
+    alert('操作に失敗しました。接続を確認してください。');
+  }
+};
+
+window.adjustServing = async (delta) => {
+  const prev = S.serving || 0;
+  const next = prev + delta;
+  if (delta > 0 && next > (S.handed || 0)) {
+    alert('配布済の番号を超えるため調整できません。');
+    return;
+  }
+  try {
+    await runTransaction(stateRef, d => {
+      if (!d) d = { ...INITIAL };
+      const newVal = Math.max(0, (d.serving || 0) + delta);
+      if (delta > 0 && newVal > (d.handed || 0)) return d;
+      d.serving = newVal;
+      return d;
+    });
+    feedback();
+    writeLog(`提供調整: ${prev} → ${Math.max(0, next)}`);
+    pushUndo(`提供調整を取消`, 'serving', prev);
+  } catch(e) { alert('操作に失敗しました'); }
+};
+
+window.updateAvgFood = async () => {
+  const v = parseFloat(document.getElementById('r_avgFoodInput').value);
+  if (!v || v < 1) { alert('1以上を入力してください'); return; }
+  try { await update(stateRef, { avgFoodPerGroup: v }); writeLog(`平均食数変更: ${v}`); }
+  catch(e) { alert('更新に失敗しました'); }
+};
+
+// ===== 管理操作 =====
+window.updateMinutes = async () => {
+  const v = parseFloat(document.getElementById('m_minutesInput').value);
+  if (!v || v < 0.1) { alert('0.1以上を入力してください'); return; }
+  try { await update(stateRef, { minutesPerGroup: v }); writeLog(`提供時間変更: ${v}分`); }
+  catch(e) { alert('更新に失敗しました'); }
+};
+
+window.updateAvgFoodMaster = async () => {
+  const v = parseFloat(document.getElementById('m_avgFoodInput').value);
+  if (!v || v < 1) { alert('1以上を入力してください'); return; }
+  try { await update(stateRef, { avgFoodPerGroup: v }); writeLog(`平均食数変更: ${v}`); }
+  catch(e) { alert('更新に失敗しました'); }
+};
+
+window.setStatus = async (s) => {
+  try { await update(stateRef, { status: s }); writeLog(`営業状態: ${s}`); }
+  catch(e) { alert('変更に失敗しました'); }
+};
+
+window.resetAll = async () => {
+  if (!confirm('すべてリセットします。よろしいですか？')) return;
+  try { await set(stateRef, { ...INITIAL }); writeLog('全リセット実行'); }
+  catch(e) { alert('リセットに失敗しました'); }
+};
+
+// ===== SPA画面切替 =====
+function switchMode(mode) {
+  document.getElementById('entryView').classList.toggle('hidden', mode !== 'entry');
+  document.getElementById('counterView').classList.toggle('hidden', mode !== 'counter');
+  document.getElementById('masterView').classList.toggle('hidden', mode !== 'master');
+
+  document.querySelectorAll('.mode-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.mode === mode);
+  });
+
+  history.pushState({ mode }, '', `?mode=${mode}`);
+  if (mode === 'master') generateQR();
+  window.scrollTo(0, 0);
+}
+window.switchMode = switchMode;
+
+window.addEventListener('popstate', (e) => {
+  const mode = (e.state && e.state.mode) || new URLSearchParams(location.search).get('mode') || 'entry';
+  switchMode(mode);
+});
+
+// ===== QRコード =====
+function generateQR() {
+  const container = document.getElementById('qrContainer');
+  const urlEl = document.getElementById('m_url');
+
+  // お客様用ページのURL（同じディレクトリにある前提）
+  const base = location.href.replace(/[^/]*$/, '');
+  const url = base + CUSTOMER_PAGE;
+  urlEl.textContent = url;
+
+  container.innerHTML = '';
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(container, {
+      text: url, width: 160, height: 160,
+      colorDark: '#1a1614', colorLight: '#f5efe4',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } else {
+    container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(url)}" alt="QR" style="margin:8px auto;display:block;">`;
+  }
+}
+
+// ===== 初期化 =====
+const mode = new URLSearchParams(location.search).get('mode') || 'entry';
+history.replaceState({ mode }, '', `?mode=${mode}`);
+switchMode(mode);
+</script>
+</body>
+</html>
